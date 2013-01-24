@@ -18,7 +18,7 @@
 import sys, threading
 from http import cookiejar
 from urllib import request
-from .html_parse import html_parse
+from .lib_html_parse import html_parse
 
 DEFAULT_CONCURRENCY = 20
 
