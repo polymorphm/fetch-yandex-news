@@ -67,9 +67,9 @@ class GetYandexNewsError(Exception):
 class Data:
     pass
 
-def result_line_format(data, use_url=None):
-    if use_url is None:
-        use_url = True # TODO: need False
+def result_line_format(data, show_url=None):
+    if show_url is None:
+        show_url = False
     
     for result in data.result:
             try:
@@ -85,7 +85,7 @@ def result_line_format(data, use_url=None):
             if result_title is None:
                 continue
             
-            if use_url:
+            if show_url:
                 if result_url is None:
                     continue
                 

@@ -27,7 +27,7 @@ def on_begin(ui_lock, data):
     with ui_lock:
         print('[{!r}] begin: {!r}'.format(data.url_id, data.url))
 
-def on_result(ui_lock, out_fd, data):
+def on_result(ui_lock, show_url, out_fd, data):
     with ui_lock:
         if data.error is not None:
             print('[{!r}] error: {!r}: {!r}: {!r}'.format(
@@ -35,7 +35,7 @@ def on_result(ui_lock, out_fd, data):
                     data.error[0], data.error[1]))
             return
         
-        for result_line in fetch_yandex_news.result_line_format(data):
+        for result_line in fetch_yandex_news.result_line_format(data, show_url=show_url):
             out_fd.write('{}\n'.format(result_line))
         out_fd.flush()
         
@@ -54,6 +54,11 @@ def main():
             '--urls',
             metavar='URL-LIST-PATH',
             help='path to url list file',
+            )
+    parser.add_argument(
+            '--show-url',
+            action='store_true',
+            help='show url for eatch news',
             )
     parser.add_argument(
             '--out',
@@ -77,7 +82,7 @@ def main():
         fetch_yandex_news.fetch_yandex_news(
                 url_list=url_list,
                 on_begin=lambda data: on_begin(ui_lock, data),
-                on_result=lambda data: on_result(ui_lock, out_fd, data),
+                on_result=lambda data: on_result(ui_lock, args.show_url, out_fd, data),
                 on_done=lambda: on_done(ui_lock, done_event),
                 )
         done_event.wait()
