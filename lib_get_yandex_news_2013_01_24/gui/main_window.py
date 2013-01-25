@@ -64,8 +64,14 @@ class MainWindow:
         self._copy_button.pack(side=tkinter.LEFT, padx=10, pady=10)
         self._close_button.pack(side=tkinter.RIGHT, padx=10, pady=10)
         
+        self._status_var = tkinter.StringVar()
+        self._statusbar = ttk.Label(master=self._root,
+                textvariable=self._status_var)
+        self._statusbar.pack(side=tkinter.LEFT, fill=tkinter.BOTH, expand=True)
+        
         self._busy_state = False
         self._busy_state_id = object()
+        self._set_status('Ready')
     
     def _close_cmd(self):
         if self._busy_state:
@@ -74,6 +80,9 @@ class MainWindow:
         
         self._tk_mt.push_destroy()
     
+    def _set_status(self, text):
+        self._status_var.set('Status: {}'.format(text))
+    
     def _reload_cmd(self):
         if self._busy_state:
             self._root.bell()
@@ -81,6 +90,7 @@ class MainWindow:
         
         self._busy_state = True
         self._busy_state_id = object()
+        self._set_status('Working')
         
         self._text.config(state=tkinter.NORMAL)
         self._text.delete(1.0, tkinter.END)
@@ -122,6 +132,7 @@ class MainWindow:
         
         self._busy_state = False
         self._busy_state_id = object()
+        self._set_status('Done')
     
     def _copy_cmd(self):
         if self._busy_state:
