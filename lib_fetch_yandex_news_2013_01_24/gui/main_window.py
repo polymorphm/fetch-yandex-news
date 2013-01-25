@@ -59,15 +59,20 @@ class MainWindow:
                 text='Close',
                 command=self._close_cmd)
         
-        self._text.pack(fill=tkinter.BOTH, expand=True)
-        self._reload_button.pack(side=tkinter.LEFT, padx=10, pady=10)
-        self._copy_button.pack(side=tkinter.LEFT, padx=10, pady=10)
-        self._close_button.pack(side=tkinter.RIGHT, padx=10, pady=10)
+        self._show_url_var = tkinter.BooleanVar()
+        self._show_url = ttk.Checkbutton(
+                master=self._root, variable=self._show_url_var, text='Show URL')
         
         self._status_var = tkinter.StringVar()
         self._statusbar = ttk.Label(master=self._root,
                 textvariable=self._status_var)
+        
+        self._text.pack(fill=tkinter.BOTH, expand=True)
+        self._reload_button.pack(side=tkinter.LEFT, padx=10, pady=10)
+        self._copy_button.pack(side=tkinter.LEFT, padx=10, pady=10)
+        self._show_url.pack(side=tkinter.LEFT, fill=tkinter.BOTH, expand=True)
         self._statusbar.pack(side=tkinter.LEFT, fill=tkinter.BOTH, expand=True)
+        self._close_button.pack(side=tkinter.RIGHT, padx=10, pady=10)
         
         self._busy_state = False
         self._busy_state_id = object()
@@ -92,24 +97,29 @@ class MainWindow:
         self._busy_state_id = object()
         self._set_status('Working')
         
+        self._reload_button.config(state=tkinter.DISABLED)
+        self._copy_button.config(state=tkinter.DISABLED)
+        self._show_url.config(state=tkinter.DISABLED)
+        self._close_button.config(state=tkinter.DISABLED)
+        
         self._text.config(state=tkinter.NORMAL)
         self._text.delete(1.0, tkinter.END)
         self._text.config(state=tkinter.DISABLED)
         
-        def on_result(busy_state_id, data):
-            self._tk_mt.push(lambda: self._on_reload_result(busy_state_id, data))
+        def on_result(busy_state_id, show_url, data):
+            self._tk_mt.push(lambda: self._on_reload_result(busy_state_id, show_url, data))
         
         def on_done(busy_state_id):
             self._tk_mt.push(lambda: self._on_reload_done(busy_state_id))
         
         fetch_yandex_news.fetch_yandex_news(
                 on_result=lambda data, _busy_state_id=self._busy_state_id:
-                        on_result(_busy_state_id, data),
+                        on_result(_busy_state_id, self._show_url_var.get(), data),
                 on_done=lambda _busy_state_id=self._busy_state_id:
                         on_done(_busy_state_id),
                 )
     
-    def _on_reload_result(self, busy_state_id, data):
+    def _on_reload_result(self, busy_state_id, show_url, data):
         if busy_state_id != self._busy_state_id:
             return
         
@@ -117,7 +127,7 @@ class MainWindow:
             return
         
         self._text.config(state=tkinter.NORMAL)
-        for result_line in fetch_yandex_news.result_line_format(data):
+        for result_line in fetch_yandex_news.result_line_format(data, show_url=show_url):
             self._text.insert(tkinter.END, '{}\n'.format(result_line))
         self._text.config(state=tkinter.DISABLED)
     
@@ -128,6 +138,11 @@ class MainWindow:
         self._busy_state = False
         self._busy_state_id = object()
         self._set_status('Done')
+        
+        self._reload_button.config(state=tkinter.NORMAL)
+        self._copy_button.config(state=tkinter.NORMAL)
+        self._show_url.config(state=tkinter.NORMAL)
+        self._close_button.config(state=tkinter.NORMAL)
     
     def _copy_cmd(self):
         if self._busy_state:
