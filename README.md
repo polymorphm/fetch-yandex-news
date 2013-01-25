@@ -6,7 +6,7 @@ fetch-yandex-news
 Status
 ------
 
-Development branch
+Beta branch
 
 Compiling for Microsoft Windows
 -------------------------------
