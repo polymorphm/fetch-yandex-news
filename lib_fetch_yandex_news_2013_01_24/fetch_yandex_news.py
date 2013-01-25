@@ -18,6 +18,7 @@
 import sys, threading
 from http import cookiejar
 from urllib import request
+from urllib import parse as url_parse
 from .lib_html_parse import html_parse
 
 DEFAULT_CONCURRENCY = 20
@@ -66,15 +67,36 @@ class GetYandexNewsError(Exception):
 class Data:
     pass
 
-def result_line_format(data):
+def result_line_format(data, use_url=None):
+    if use_url is None:
+        use_url = True # TODO: need False
+    
     for result in data.result:
             try:
                 result_title = result['title']
             except KeyError:
-                pass
-            else:
-                result_title = str(result_title).replace('\n', ' ... ').replace('|', ' ... ')
-                yield '{}|{}'.format(result_title, data.url)
+                result_title = None
+            
+            try:
+                result_url = result['url']
+            except KeyError:
+                result_url = None
+            
+            if result_title is None:
+                continue
+            
+            if use_url:
+                if result_url is None:
+                    continue
+                
+                yield '{}|{}'.format(
+                        str(result_title).replace('\n', ' ... ').replace('|', ' ... '),
+                        str(result_url).replace('\n', ' ... ').replace('|', ' ... '),
+                        )
+                
+                continue
+            
+            yield str(result_title).replace('\n', ' ... ')
 
 def ext_open(opener, *args,
         headers=None, new_headers=None,
@@ -96,6 +118,24 @@ def ext_open(opener, *args,
         opener.addheaders = orig_headers
     
     return resp
+
+def fix_news_url(raw_url):
+    raw_url_obj = url_parse.urlsplit(raw_url)
+    raw_url_query = raw_url_obj.query
+    
+    if not raw_url_query:
+        return str(raw_url)
+    
+    raw_url_params = url_parse.parse_qs(raw_url_query)
+    cl4url_param = raw_url_params.get('cl4url', [''])[0]
+    
+    if not cl4url_param:
+        return str(raw_url)
+    
+    if not url_parse.urlparse(cl4url_param).scheme:
+        cl4url_param = 'http://{}'.format(cl4url_param)
+    
+    return cl4url_param
 
 def fetch_yandex_news_thread(fetch_lock, url_iter, on_begin=None, on_result=None):
     while True:
@@ -160,6 +200,8 @@ def fetch_yandex_news_thread(fetch_lock, url_iter, on_begin=None, on_result=None
                         news_title_nodes[0].childs and \
                         isinstance(news_title_nodes[0].childs[0], html_parse.DataHtmlNode):
                     result_item['title'] = news_title_nodes[0].childs[0].data
+                    result_item['raw_url'] = url_parse.urljoin(data.url, news_title_nodes[0].attrs.get('href', ''))
+                    result_item['url'] = fix_news_url(result_item['raw_url'])
                 
                 if news_text_nodes and \
                         news_text_nodes[0].childs and \
