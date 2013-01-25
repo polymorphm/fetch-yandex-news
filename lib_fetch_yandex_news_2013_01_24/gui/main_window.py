@@ -22,7 +22,7 @@ import threading
 import tkinter
 from tkinter import ttk, scrolledtext
 from . import tk_mt
-from .. import get_yandex_news
+from .. import fetch_yandex_news
 
 DEFAULT_MAIN_WINDOW_WIDTH = 700
 DEFAULT_MAIN_WINDOW_HEIGHT = 500
@@ -33,7 +33,7 @@ class MainWindow:
         self._tk_mt = tk_mt.TkMt(self._root)
         self._root.protocol("WM_DELETE_WINDOW", self._close_cmd)
         
-        self._root.title(string='get-yandex-news-gui')
+        self._root.title(string='fetch-yandex-news-gui')
         self._root.geometry('{}x{}'.format(
                 DEFAULT_MAIN_WINDOW_WIDTH, DEFAULT_MAIN_WINDOW_HEIGHT))
         
@@ -102,7 +102,7 @@ class MainWindow:
         def on_done(busy_state_id):
             self._tk_mt.push(lambda: self._on_reload_done(busy_state_id))
         
-        get_yandex_news.get_yandex_news(
+        fetch_yandex_news.fetch_yandex_news(
                 on_result=lambda data, _busy_state_id=self._busy_state_id:
                         on_result(_busy_state_id, data),
                 on_done=lambda _busy_state_id=self._busy_state_id:
@@ -117,7 +117,7 @@ class MainWindow:
             return
         
         self._text.config(state=tkinter.NORMAL)
-        for result_line in get_yandex_news.result_line_format(data):
+        for result_line in fetch_yandex_news.result_line_format(data):
             self._text.insert(tkinter.END, '{}\n'.format(result_line))
         self._text.config(state=tkinter.DISABLED)
     

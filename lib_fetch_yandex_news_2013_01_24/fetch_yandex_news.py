@@ -97,11 +97,11 @@ def ext_open(opener, *args,
     
     return resp
 
-def get_yandex_news_thread(get_lock, url_iter, on_begin=None, on_result=None):
+def fetch_yandex_news_thread(fetch_lock, url_iter, on_begin=None, on_result=None):
     while True:
         data = Data()
         
-        with get_lock:
+        with fetch_lock:
             try:
                 data.url_id, data.url = next(url_iter)
             except StopIteration:
@@ -179,7 +179,7 @@ def get_yandex_news_thread(get_lock, url_iter, on_begin=None, on_result=None):
         if on_result is not None:
             on_result(data)
 
-def get_yandex_news(conc=None, url_list=None,
+def fetch_yandex_news(conc=None, url_list=None,
         on_begin=None, on_result=None, on_done=None):
     if conc is None:
         conc = DEFAULT_CONCURRENCY
@@ -187,13 +187,13 @@ def get_yandex_news(conc=None, url_list=None,
     if url_list is None:
         url_list = DEFAULT_URL_LIST
     
-    get_lock = threading.RLock()
+    fetch_lock = threading.RLock()
     url_iter = enumerate(url_list)
     
     thread_list = tuple(
             threading.Thread(
-                    target=lambda: get_yandex_news_thread(
-                            get_lock,
+                    target=lambda: fetch_yandex_news_thread(
+                            fetch_lock,
                             url_iter,
                             on_begin=on_begin,
                             on_result=on_result,

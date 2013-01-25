@@ -18,7 +18,11 @@
 
 assert str is not bytes
 
-from lib_get_yandex_news_2013_01_24.main_cli import main
+
+# pre-import for cx_Freeze
+#import re
+
+from lib_fetch_yandex_news_2013_01_24.gui.main_gui import main
 
 if __name__ == '__main__':
     main()

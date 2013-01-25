@@ -18,7 +18,7 @@
 assert str is not bytes
 
 import threading, argparse
-from . import read_list, get_yandex_news
+from . import read_list, fetch_yandex_news
 
 class UserError(Exception):
     pass
@@ -35,7 +35,7 @@ def on_result(ui_lock, out_fd, data):
                     data.error[0], data.error[1]))
             return
         
-        for result_line in get_yandex_news.result_line_format(data):
+        for result_line in fetch_yandex_news.result_line_format(data):
             out_fd.write('{}\n'.format(result_line))
         out_fd.flush()
         
@@ -48,7 +48,7 @@ def on_done(ui_lock, done_event):
 
 def main():
     parser = argparse.ArgumentParser(
-            description='utility for getting news titles from ``Yandex.News``.',
+            description='utility for fetching news titles from ``Yandex.News``.',
             )
     parser.add_argument(
             '--urls',
@@ -74,7 +74,7 @@ def main():
     
     with open(args.out, 'w', encoding='utf-8', errors='replace', newline='\n') as out_fd:
         done_event = threading.Event()
-        get_yandex_news.get_yandex_news(
+        fetch_yandex_news.fetch_yandex_news(
                 url_list=url_list,
                 on_begin=lambda data: on_begin(ui_lock, data),
                 on_result=lambda data: on_result(ui_lock, out_fd, data),

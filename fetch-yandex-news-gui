@@ -18,7 +18,7 @@
 
 assert str is not bytes
 
-from lib_get_yandex_news_2013_01_24.gui.main_gui import main
+from lib_fetch_yandex_news_2013_01_24.gui.main_gui import main
 
 if __name__ == '__main__':
     main()
