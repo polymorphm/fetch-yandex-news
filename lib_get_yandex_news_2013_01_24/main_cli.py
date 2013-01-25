@@ -35,13 +35,8 @@ def on_result(ui_lock, out_fd, data):
                     data.error[0], data.error[1]))
             return
         
-        for result in data.result:
-            try:
-                result_title = result['title']
-            except KeyError:
-                pass
-            else:
-                out_fd.write('{}\n'.format(result_title))
+        for result_line in get_yandex_news.result_line_format(data):
+            out_fd.write('{}\n'.format(result_line))
         out_fd.flush()
         
         print('[{!r}] pass: {!r}'.format(data.url_id, data.url))

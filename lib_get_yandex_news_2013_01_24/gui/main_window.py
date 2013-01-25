@@ -117,13 +117,8 @@ class MainWindow:
             return
         
         self._text.config(state=tkinter.NORMAL)
-        for result in data.result:
-            try:
-                result_title = result['title']
-            except KeyError:
-                pass
-            else:
-                self._text.insert(tkinter.END, '{}\n'.format(result_title))
+        for result_line in get_yandex_news.result_line_format(data):
+            self._text.insert(tkinter.END, '{}\n'.format(result_line))
         self._text.config(state=tkinter.DISABLED)
     
     def _on_reload_done(self, busy_state_id):

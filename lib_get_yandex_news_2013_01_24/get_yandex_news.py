@@ -66,6 +66,16 @@ class GetYandexNewsError(Exception):
 class Data:
     pass
 
+def result_line_format(data):
+    for result in data.result:
+            try:
+                result_title = result['title']
+            except KeyError:
+                pass
+            else:
+                result_title = str(result_title).replace('\n', ' ... ').replace('|', ' ... ')
+                yield '{}|{}'.format(result_title, data.url)
+
 def ext_open(opener, *args,
         headers=None, new_headers=None,
         **kwargs):
