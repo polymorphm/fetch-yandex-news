@@ -60,6 +60,12 @@ class MainWindow:
         self._show_url = ttk.Checkbutton(
                 master=self._top_frame, variable=self._show_url_var, text='Show URL')
         
+        self._spec_url_sep_var = tkinter.BooleanVar()
+        self._spec_url_sep = ttk.Checkbutton(
+                master=self._top_frame, variable=self._spec_url_sep_var,
+                text='Special URL Separator',
+                )
+        
         self._text = scrolledtext.ScrolledText(master=self._center_frame)
         self._text.propagate(False)
         self._text.config(state=tkinter.DISABLED)
@@ -84,6 +90,7 @@ class MainWindow:
         self._source_urls_file_label.pack(side=tkinter.TOP, fill=tkinter.X, padx=10, pady=10)
         self._source_urls_file_entry.pack(side=tkinter.TOP, fill=tkinter.X, padx=10, pady=10)
         self._show_url.pack(side=tkinter.TOP, fill=tkinter.X, padx=10, pady=10)
+        self._spec_url_sep.pack(side=tkinter.TOP, fill=tkinter.X, padx=10, pady=10)
         self._text.pack(fill=tkinter.BOTH, expand=True)
         self._select_source_urls_file_button.pack(side=tkinter.LEFT, padx=10, pady=10)
         self._reload_button.pack(side=tkinter.LEFT, padx=10, pady=10)
@@ -143,6 +150,7 @@ class MainWindow:
         
         self._source_urls_file_entry.config(state=tkinter.DISABLED)
         self._show_url.config(state=tkinter.DISABLED)
+        self._spec_url_sep.config(state=tkinter.DISABLED)
         self._select_source_urls_file_button.config(state=tkinter.DISABLED)
         self._reload_button.config(state=tkinter.DISABLED)
         self._copy_button.config(state=tkinter.DISABLED)
@@ -155,6 +163,7 @@ class MainWindow:
         busy_state_id = self._busy_state_id
         url_list_file_path = self._source_urls_file_entry.get().strip()
         show_url = self._show_url_var.get()
+        spec_url_sep = self._spec_url_sep_var.get()
         
         if url_list_file_path:
             url_list = read_list.read_list(url_list_file_path)
@@ -162,7 +171,8 @@ class MainWindow:
             url_list = None
         
         def on_result(data):
-            self._tk_mt.push(lambda: self._on_reload_result(busy_state_id, show_url, data))
+            self._tk_mt.push(lambda: self._on_reload_result(
+                    busy_state_id, show_url, spec_url_sep, data))
         
         def on_done():
             self._tk_mt.push(lambda: self._on_reload_done(busy_state_id))
@@ -173,15 +183,21 @@ class MainWindow:
                 on_done=on_done,
                 )
     
-    def _on_reload_result(self, busy_state_id, show_url, data):
+    def _on_reload_result(self, busy_state_id, show_url, spec_url_sep, data):
         if busy_state_id != self._busy_state_id:
             return
         
         if data.error is not None:
             return
         
+        if spec_url_sep:
+            url_separator = '|'
+        else:
+            url_separator = None
+        
         self._text.config(state=tkinter.NORMAL)
-        for result_line in fetch_news.result_line_format(data, show_url=show_url):
+        for result_line in fetch_news.result_line_format(
+                data, show_url=show_url, url_separator=url_separator):
             self._text.insert(tkinter.END, '{}\n'.format(result_line))
         self._text.config(state=tkinter.DISABLED)
     
@@ -195,6 +211,7 @@ class MainWindow:
         
         self._source_urls_file_entry.config(state=tkinter.NORMAL)
         self._show_url.config(state=tkinter.NORMAL)
+        self._spec_url_sep.config(state=tkinter.NORMAL)
         self._select_source_urls_file_button.config(state=tkinter.NORMAL)
         self._reload_button.config(state=tkinter.NORMAL)
         self._copy_button.config(state=tkinter.NORMAL)
