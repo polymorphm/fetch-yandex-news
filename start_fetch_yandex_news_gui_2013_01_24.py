@@ -20,7 +20,7 @@ assert str is not bytes
 
 
 # pre-import for cx_Freeze
-#import re
+import re
 
 from lib_fetch_yandex_news_2013_01_24.gui.main_gui import main
 
