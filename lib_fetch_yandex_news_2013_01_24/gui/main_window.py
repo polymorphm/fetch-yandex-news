@@ -47,6 +47,7 @@ class MainWindow:
         self._root.config(menu=self._menubar)
         
         self._text = scrolledtext.ScrolledText(master=self._root)
+        self._text.propagate(False)
         self._text.config(state=tkinter.DISABLED)
         
         self._reload_button = ttk.Button(master=self._root,
