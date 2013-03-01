@@ -18,7 +18,7 @@
 assert str is not bytes
 
 import threading, argparse
-from . import read_list, fetch_yandex_news
+from . import read_list, fetch_news
 
 class UserError(Exception):
     pass
@@ -27,7 +27,7 @@ def on_begin(ui_lock, data):
     with ui_lock:
         print('[{!r}] begin: {!r}'.format(data.url_id, data.url))
 
-def on_result(ui_lock, show_url, out_fd, data):
+def on_result(ui_lock, show_url, url_seporator, out_fd, data):
     with ui_lock:
         if data.error is not None:
             print('[{!r}] error: {!r}: {!r}: {!r}'.format(
@@ -35,7 +35,8 @@ def on_result(ui_lock, show_url, out_fd, data):
                     data.error[0], data.error[1]))
             return
         
-        for result_line in fetch_yandex_news.result_line_format(data, show_url=show_url):
+        for result_line in fetch_news.result_line_format(
+                data, show_url=show_url, url_seporator=url_seporator):
             out_fd.write('{}\n'.format(result_line))
         out_fd.flush()
         
@@ -61,6 +62,11 @@ def main():
             help='show url for eatch news',
             )
     parser.add_argument(
+            '--url-seporator',
+            metavar='URL-SEPORATOR-SYMBOL',
+            help='url seporator symbol',
+            )
+    parser.add_argument(
             '--out',
             metavar='OUTPUT-PATH',
             help='path to output result file',
@@ -77,12 +83,18 @@ def main():
     else:
         url_list = None
     
-    with open(args.out, 'w', encoding='utf-8', errors='replace', newline='\n') as out_fd:
+    with open(args.out, 'w', encoding='utf-8', newline='\n') as out_fd:
         done_event = threading.Event()
-        fetch_yandex_news.fetch_yandex_news(
+        fetch_news.fetch_news(
                 url_list=url_list,
                 on_begin=lambda data: on_begin(ui_lock, data),
-                on_result=lambda data: on_result(ui_lock, args.show_url, out_fd, data),
+                on_result=lambda data: on_result(
+                        ui_lock,
+                        args.show_url,
+                        args.url_seporator,
+                        out_fd,
+                        data,
+                        ),
                 on_done=lambda: on_done(ui_lock, done_event),
                 )
         done_event.wait()

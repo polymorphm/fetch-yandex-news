@@ -16,7 +16,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 def read_list(path):
-    with open(path, 'r', encoding='utf-8', errors='replace', newline='\n') as fd:
+    with open(path, 'r', encoding='utf-8', errors='replace') as fd:
         for line in filter(None, map(lambda s: s.strip(), fd)):
             # TODO: for Python-3.3+ -- need use ``yield from ...``
             yield line

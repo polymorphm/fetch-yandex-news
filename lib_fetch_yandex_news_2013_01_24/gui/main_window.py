@@ -22,7 +22,7 @@ import threading
 import tkinter
 from tkinter import ttk, scrolledtext
 from . import tk_mt
-from .. import fetch_yandex_news
+from .. import fetch_news
 
 DEFAULT_MAIN_WINDOW_WIDTH = 700
 DEFAULT_MAIN_WINDOW_HEIGHT = 500
@@ -106,17 +106,18 @@ class MainWindow:
         self._text.delete(1.0, tkinter.END)
         self._text.config(state=tkinter.DISABLED)
         
-        def on_result(busy_state_id, show_url, data):
+        busy_state_id = self._busy_state_id
+        show_url = self._show_url_var.get()
+        
+        def on_result(data):
             self._tk_mt.push(lambda: self._on_reload_result(busy_state_id, show_url, data))
         
-        def on_done(busy_state_id):
+        def on_done():
             self._tk_mt.push(lambda: self._on_reload_done(busy_state_id))
         
-        fetch_yandex_news.fetch_yandex_news(
-                on_result=lambda data, _busy_state_id=self._busy_state_id:
-                        on_result(_busy_state_id, self._show_url_var.get(), data),
-                on_done=lambda _busy_state_id=self._busy_state_id:
-                        on_done(_busy_state_id),
+        fetch_news.fetch_news(
+                on_result=on_result,
+                on_done=on_done,
                 )
     
     def _on_reload_result(self, busy_state_id, show_url, data):
@@ -127,7 +128,7 @@ class MainWindow:
             return
         
         self._text.config(state=tkinter.NORMAL)
-        for result_line in fetch_yandex_news.result_line_format(data, show_url=show_url):
+        for result_line in fetch_news.result_line_format(data, show_url=show_url):
             self._text.insert(tkinter.END, '{}\n'.format(result_line))
         self._text.config(state=tkinter.DISABLED)
     
