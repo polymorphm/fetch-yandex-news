@@ -46,34 +46,42 @@ class MainWindow:
         self._menubar.add_cascade(label="Program", menu=self._program_menu)
         self._root.config(menu=self._menubar)
         
-        self._text = scrolledtext.ScrolledText(master=self._root)
-        self._text.propagate(False)
-        self._text.config(state=tkinter.DISABLED)
-        
-        self._reload_button = ttk.Button(master=self._root,
-                text='Load / Reload',
-                command=self._reload_cmd)
-        self._copy_button = ttk.Button(master=self._root,
-                text='Copy',
-                command=self._copy_cmd)
-        self._close_button = ttk.Button(master=self._root,
-                text='Close',
-                command=self._close_cmd)
+        self._top_frame = ttk.Frame(master=self._root)
+        self._center_frame = ttk.Frame(master=self._root)
+        self._bottom_frame = ttk.Frame(master=self._root)
         
         self._show_url_var = tkinter.BooleanVar()
         self._show_url = ttk.Checkbutton(
-                master=self._root, variable=self._show_url_var, text='Show URL')
+                master=self._top_frame, variable=self._show_url_var, text='Show URL')
+        
+        self._text = scrolledtext.ScrolledText(master=self._center_frame)
+        self._text.propagate(False)
+        self._text.config(state=tkinter.DISABLED)
+        
+        self._reload_button = ttk.Button(master=self._bottom_frame,
+                text='Load / Reload',
+                command=self._reload_cmd)
+        self._copy_button = ttk.Button(master=self._bottom_frame,
+                text='Copy',
+                command=self._copy_cmd)
+        self._close_button = ttk.Button(master=self._bottom_frame,
+                text='Close',
+                command=self._close_cmd)
         
         self._status_var = tkinter.StringVar()
-        self._statusbar = ttk.Label(master=self._root,
+        self._statusbar = ttk.Label(master=self._bottom_frame,
                 textvariable=self._status_var)
         
+        self._show_url.pack(side=tkinter.LEFT, padx=10, pady=10)
         self._text.pack(fill=tkinter.BOTH, expand=True)
         self._reload_button.pack(side=tkinter.LEFT, padx=10, pady=10)
         self._copy_button.pack(side=tkinter.LEFT, padx=10, pady=10)
-        self._show_url.pack(side=tkinter.LEFT, fill=tkinter.BOTH, expand=True)
-        self._statusbar.pack(side=tkinter.LEFT, fill=tkinter.BOTH, expand=True)
+        self._statusbar.pack(side=tkinter.LEFT, expand=True, padx=10, pady=10)
         self._close_button.pack(side=tkinter.RIGHT, padx=10, pady=10)
+        
+        self._top_frame.pack(side=tkinter.TOP, fill=tkinter.X)
+        self._center_frame.pack(fill=tkinter.BOTH, expand=True)
+        self._bottom_frame.pack(side=tkinter.BOTTOM, fill=tkinter.X)
         
         self._busy_state = False
         self._busy_state_id = object()
@@ -98,9 +106,9 @@ class MainWindow:
         self._busy_state_id = object()
         self._set_status('Working')
         
+        self._show_url.config(state=tkinter.DISABLED)
         self._reload_button.config(state=tkinter.DISABLED)
         self._copy_button.config(state=tkinter.DISABLED)
-        self._show_url.config(state=tkinter.DISABLED)
         self._close_button.config(state=tkinter.DISABLED)
         
         self._text.config(state=tkinter.NORMAL)
@@ -141,9 +149,9 @@ class MainWindow:
         self._busy_state_id = object()
         self._set_status('Done')
         
+        self._show_url.config(state=tkinter.NORMAL)
         self._reload_button.config(state=tkinter.NORMAL)
         self._copy_button.config(state=tkinter.NORMAL)
-        self._show_url.config(state=tkinter.NORMAL)
         self._close_button.config(state=tkinter.NORMAL)
     
     def _copy_cmd(self):
