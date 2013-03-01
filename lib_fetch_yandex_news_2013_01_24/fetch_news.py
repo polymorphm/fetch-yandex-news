@@ -198,12 +198,14 @@ def parse_yandex_news(url):
                         },
                 ))
         
-        if news_title_nodes and \
-                news_title_nodes[0].childs and \
-                isinstance(news_title_nodes[0].childs[0], html_parse.DataHtmlNode):
-            result_item['title'] = news_title_nodes[0].childs[0].data
-            result_item['raw_url'] = url_parse.urljoin(url, news_title_nodes[0].attrs.get('href', ''))
-            result_item['url'] = fix_yandex_news_url(result_item['raw_url'])
+        if not news_title_nodes or \
+                not news_title_nodes[0].childs or \
+                not isinstance(news_title_nodes[0].childs[0], html_parse.DataHtmlNode):
+            continue
+        
+        result_item['title'] = news_title_nodes[0].childs[0].data
+        result_item['raw_url'] = url_parse.urljoin(url, news_title_nodes[0].attrs.get('href', ''))
+        result_item['url'] = fix_yandex_news_url(result_item['raw_url'])
         
         if news_text_nodes and \
                 news_text_nodes[0].childs and \
