@@ -69,6 +69,9 @@ class FetchNewsError(Exception):
 class FetchYandexNewsError(FetchNewsError):
     pass
 
+class FetchGoogleNewsError(FetchNewsError):
+    pass
+
 class UnknownServiceFetchNewsError(FetchNewsError):
     pass
 
@@ -152,6 +155,10 @@ def fix_yandex_news_url(raw_url):
     
     return cl4url_param
 
+def fix_google_news_url(raw_url):
+    # nothing to fix yet for Google
+    return raw_url
+
 def parse_yandex_news(url):
     cookies = cookiejar.CookieJar()
     opener = request.build_opener(
@@ -217,6 +224,60 @@ def parse_yandex_news(url):
     
     return tuple(result_list)
 
+def parse_google_news(url):
+    cookies = cookiejar.CookieJar()
+    opener = request.build_opener(
+            request.HTTPCookieProcessor(cookiejar=cookies),
+            )
+    
+    resp = ext_open(
+            opener,
+            url,
+            timeout=DEFAULT_TIMEOUT,
+            )
+    if resp.getcode() != 200 or resp.geturl() != url:
+        raise FetchGoogleNewsError(
+                'resp.getcode() != 200 or resp.geturl() != url')
+    
+    content = resp.read(DEFAULT_CONTENT_LENGTH).decode(
+            'utf-8', 'replace')
+    
+    result_list = []
+    
+    news_item_nodes = tuple(html_parse.find_tags(
+            (html_parse.html_parse(content, use_min_attr_hack=True),),
+            'a',
+            in_attrs={
+                    'class': 'article',
+                    },
+            ))
+    
+    for news_item_node in news_item_nodes:
+        result_item = {}
+        
+        result_item['raw_url'] = url_parse.urljoin(url, news_item_node.attrs.get('href', ''))
+        result_item['url'] = fix_google_news_url(result_item['raw_url'])
+        
+        news_title_nodes = tuple(html_parse.find_tags(
+                (news_item_node,),
+                'span',
+                in_attrs={
+                        'class': 'titletext',
+                        },
+                ))
+        
+        if not news_title_nodes or \
+                not news_title_nodes[0].childs or \
+                not isinstance(news_title_nodes[0].childs[0], html_parse.DataHtmlNode):
+            continue
+        
+        result_item['title'] = news_title_nodes[0].childs[0].data
+        
+        if result_item:
+            result_list.append(result_item)
+    
+    return tuple(result_list)
+
 def fetch_news_thread(fetch_lock, url_iter, on_begin=None, on_result=None):
     while True:
         data = Data()
@@ -235,6 +296,10 @@ def fetch_news_thread(fetch_lock, url_iter, on_begin=None, on_result=None):
                     '^https?\:\/\/news\.yandex\.ru(\/|$)',
                     data.url, flags=re.M|re.S):
                 data.result = parse_yandex_news(data.url)
+            elif re.match(
+                    '^https\:\/\/news\.google\.(com|ru)(\/|$)',
+                    data.url, flags=re.M|re.S):
+                data.result = parse_google_news(data.url)
             else:
                 raise UnknownServiceFetchNewsError(
                         'unknown service')
