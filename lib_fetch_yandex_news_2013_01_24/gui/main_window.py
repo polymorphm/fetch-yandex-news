@@ -31,7 +31,7 @@ class MainWindow:
     def __init__(self):
         self._root = tkinter.Tk()
         self._tk_mt = tk_mt.TkMt(self._root)
-        self._root.protocol("WM_DELETE_WINDOW", self._close_cmd)
+        self._root.protocol('WM_DELETE_WINDOW', self._close_cmd)
         
         self._root.title(string='fetch-yandex-news-gui')
         self._root.geometry('{}x{}'.format(
@@ -41,11 +41,11 @@ class MainWindow:
         self._program_menu = tkinter.Menu(master=self._menubar)
         self._program_menu.add_command(label='Select Source URLs File',
                 command=self._select_source_urls_file_cmd)
-        self._program_menu.add_command(label="Load / Reload", command=self._reload_cmd)
-        self._program_menu.add_command(label="Copy", command=self._copy_cmd)
+        self._program_menu.add_command(label='Load / Reload', command=self._reload_cmd)
+        self._program_menu.add_command(label='Copy', command=self._copy_cmd)
         self._program_menu.add_separator()
-        self._program_menu.add_command(label="Close", command=self._close_cmd)
-        self._menubar.add_cascade(label="Program", menu=self._program_menu)
+        self._program_menu.add_command(label='Close', command=self._close_cmd)
+        self._menubar.add_cascade(label='Program', menu=self._program_menu)
         self._root.config(menu=self._menubar)
         
         self._top_frame = ttk.Frame(master=self._root)
