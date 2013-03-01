@@ -27,7 +27,7 @@ def on_begin(ui_lock, data):
     with ui_lock:
         print('[{!r}] begin: {!r}'.format(data.url_id, data.url))
 
-def on_result(ui_lock, show_url, url_seporator, out_fd, data):
+def on_result(ui_lock, show_url, url_separator, out_fd, data):
     with ui_lock:
         if data.error is not None:
             print('[{!r}] error: {!r}: {!r}: {!r}'.format(
@@ -36,7 +36,7 @@ def on_result(ui_lock, show_url, url_seporator, out_fd, data):
             return
         
         for result_line in fetch_news.result_line_format(
-                data, show_url=show_url, url_seporator=url_seporator):
+                data, show_url=show_url, url_separator=url_separator):
             out_fd.write('{}\n'.format(result_line))
         out_fd.flush()
         
@@ -62,9 +62,9 @@ def main():
             help='show url for eatch news',
             )
     parser.add_argument(
-            '--url-seporator',
-            metavar='URL-SEPORATOR-SYMBOL',
-            help='url seporator symbol',
+            '--url-separator',
+            metavar='URL-SEPARATOR-SYMBOL',
+            help='url separator symbol',
             )
     parser.add_argument(
             '--out',
@@ -91,7 +91,7 @@ def main():
                 on_result=lambda data: on_result(
                         ui_lock,
                         args.show_url,
-                        args.url_seporator,
+                        args.url_separator,
                         out_fd,
                         data,
                         ),

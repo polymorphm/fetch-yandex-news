@@ -78,7 +78,7 @@ class UnknownServiceFetchNewsError(FetchNewsError):
 class Data:
     pass
 
-def result_line_format(data, show_url=None, url_seporator=None):
+def result_line_format(data, show_url=None, url_separator=None):
     if show_url is None:
         show_url = False
     
@@ -100,11 +100,11 @@ def result_line_format(data, show_url=None, url_seporator=None):
             if result_url is None:
                 continue
             
-            if url_seporator is not None:
+            if url_separator is not None:
                 yield '{}{}{}'.format(
-                        str(result_title).replace('\n', ' ... ').replace(url_seporator, ' ... '),
-                        url_seporator,
-                        str(result_url).replace('\n', ' ... ').replace(url_seporator, ' ... '),
+                        str(result_title).replace('\n', ' ... ').replace(url_separator, ' ... '),
+                        url_separator,
+                        str(result_url).replace('\n', ' ... ').replace(url_separator, ' ... '),
                         )
             else:
                 yield '{} {}'.format(
