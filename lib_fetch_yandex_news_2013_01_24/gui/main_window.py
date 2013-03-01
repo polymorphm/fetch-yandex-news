@@ -39,6 +39,8 @@ class MainWindow:
         
         self._menubar = tkinter.Menu(master=self._root)
         self._program_menu = tkinter.Menu(master=self._menubar)
+        self._program_menu.add_command(label='Select Source URLs File',
+                command=self._select_source_urls_file_cmd)
         self._program_menu.add_command(label="Load / Reload", command=self._reload_cmd)
         self._program_menu.add_command(label="Copy", command=self._copy_cmd)
         self._program_menu.add_separator()
@@ -58,6 +60,9 @@ class MainWindow:
         self._text.propagate(False)
         self._text.config(state=tkinter.DISABLED)
         
+        self._select_source_urls_file_button = ttk.Button(master=self._bottom_frame,
+                text='Select Source URLs File',
+                command=self._select_source_urls_file_cmd)
         self._reload_button = ttk.Button(master=self._bottom_frame,
                 text='Load / Reload',
                 command=self._reload_cmd)
@@ -74,6 +79,7 @@ class MainWindow:
         
         self._show_url.pack(side=tkinter.LEFT, padx=10, pady=10)
         self._text.pack(fill=tkinter.BOTH, expand=True)
+        self._select_source_urls_file_button.pack(side=tkinter.LEFT, padx=10, pady=10)
         self._reload_button.pack(side=tkinter.LEFT, padx=10, pady=10)
         self._copy_button.pack(side=tkinter.LEFT, padx=10, pady=10)
         self._statusbar.pack(side=tkinter.LEFT, expand=True, padx=10, pady=10)
@@ -97,6 +103,19 @@ class MainWindow:
     def _set_status(self, text):
         self._status_var.set('Status: {}'.format(text))
     
+    def _select_source_urls_file_done(self, busy_state_id):
+        if self._busy_state or busy_state_id != self._busy_state_id:
+            return
+        
+        # TODO: ...
+    
+    def _select_source_urls_file_cmd(self):
+        if self._busy_state:
+            self._root.bell()
+            return
+        
+        # TODO: ...
+    
     def _reload_cmd(self):
         if self._busy_state:
             self._root.bell()
@@ -107,6 +126,7 @@ class MainWindow:
         self._set_status('Working')
         
         self._show_url.config(state=tkinter.DISABLED)
+        self._select_source_urls_file_button.config(state=tkinter.DISABLED)
         self._reload_button.config(state=tkinter.DISABLED)
         self._copy_button.config(state=tkinter.DISABLED)
         self._close_button.config(state=tkinter.DISABLED)
@@ -150,6 +170,7 @@ class MainWindow:
         self._set_status('Done')
         
         self._show_url.config(state=tkinter.NORMAL)
+        self._select_source_urls_file_button.config(state=tkinter.NORMAL)
         self._reload_button.config(state=tkinter.NORMAL)
         self._copy_button.config(state=tkinter.NORMAL)
         self._close_button.config(state=tkinter.NORMAL)
