@@ -175,7 +175,7 @@ def parse_yandex_news(url):
     news_item_nodes = tuple(html_parse.find_tags(
             (html_parse.html_parse(content, use_min_attr_hack=True),),
             'dl',
-            attrs={
+            in_attrs={
                     'class': 'b-news-item',
                     },
             ))
@@ -186,14 +186,14 @@ def parse_yandex_news(url):
         news_title_nodes = tuple(html_parse.find_tags(
                 (news_item_node,),
                 'a',
-                attrs={
+                in_attrs={
                         'class': 'title',
                         },
                 ))
         news_text_nodes = tuple(html_parse.find_tags(
                 (news_item_node,),
                 'dd',
-                attrs={
+                in_attrs={
                         'class': 'text',
                         },
                 ))
