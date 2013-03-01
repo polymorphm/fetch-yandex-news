@@ -17,7 +17,7 @@
 
 assert str is not bytes
 
-import sys, threading
+import sys, threading, re
 from http import cookiejar
 from urllib import request
 from urllib import parse as url_parse
@@ -63,42 +63,55 @@ DEFAULT_URL_LIST = (
 DEFAULT_TIMEOUT = 60.0
 DEFAULT_CONTENT_LENGTH = 10000000
 
-class GetYandexNewsError(Exception):
+class FetchNewsError(Exception):
+    pass
+
+class FetchYandexNewsError(FetchNewsError):
+    pass
+
+class UnknownServiceFetchNewsError(FetchNewsError):
     pass
 
 class Data:
     pass
 
-def result_line_format(data, show_url=None):
+def result_line_format(data, show_url=None, url_seporator=None):
     if show_url is None:
         show_url = False
     
     for result in data.result:
-            try:
-                result_title = result['title']
-            except KeyError:
-                result_title = None
-            
-            try:
-                result_url = result['url']
-            except KeyError:
-                result_url = None
-            
-            if result_title is None:
+        try:
+            result_title = result['title']
+        except KeyError:
+            result_title = None
+        
+        try:
+            result_url = result['url']
+        except KeyError:
+            result_url = None
+        
+        if result_title is None:
+            continue
+        
+        if show_url:
+            if result_url is None:
                 continue
             
-            if show_url:
-                if result_url is None:
-                    continue
-                
-                yield '{}|{}'.format(
-                        str(result_title).replace('\n', ' ... ').replace('|', ' ... '),
-                        str(result_url).replace('\n', ' ... ').replace('|', ' ... '),
+            if url_seporator is not None:
+                yield '{}{}{}'.format(
+                        str(result_title).replace('\n', ' ... ').replace(url_seporator, ' ... '),
+                        url_seporator,
+                        str(result_url).replace('\n', ' ... ').replace(url_seporator, ' ... '),
                         )
-                
-                continue
+            else:
+                yield '{} {}'.format(
+                        str(result_title).replace('\n', ' ... '),
+                        str(result_url).replace('\n', ' ... '),
+                        )
             
-            yield str(result_title).replace('\n', ' ... ')
+            continue
+        
+        yield str(result_title).replace('\n', ' ... ')
 
 def ext_open(opener, *args,
         headers=None, new_headers=None,
@@ -121,7 +134,7 @@ def ext_open(opener, *args,
     
     return resp
 
-def fix_news_url(raw_url):
+def fix_yandex_news_url(raw_url):
     raw_url_obj = url_parse.urlsplit(raw_url)
     raw_url_query = raw_url_obj.query
     
@@ -139,7 +152,70 @@ def fix_news_url(raw_url):
     
     return cl4url_param
 
-def fetch_yandex_news_thread(fetch_lock, url_iter, on_begin=None, on_result=None):
+def parse_yandex_news(url):
+    cookies = cookiejar.CookieJar()
+    opener = request.build_opener(
+            request.HTTPCookieProcessor(cookiejar=cookies),
+            )
+    
+    resp = ext_open(
+            opener,
+            url,
+            timeout=DEFAULT_TIMEOUT,
+            )
+    if resp.getcode() != 200 or resp.geturl() != url:
+        raise FetchYandexNewsError(
+                'resp.getcode() != 200 or resp.geturl() != url')
+    
+    content = resp.read(DEFAULT_CONTENT_LENGTH).decode(
+            'utf-8', 'replace')
+    
+    result_list = []
+    
+    news_item_nodes = tuple(html_parse.find_tags(
+            (html_parse.html_parse(content),),
+            'dl',
+            attrs={
+                    'class': 'b-news-item',
+                    },
+            ))
+    
+    for news_item_node in news_item_nodes:
+        result_item = {}
+        
+        news_title_nodes = tuple(html_parse.find_tags(
+                (news_item_node,),
+                'a',
+                attrs={
+                        'class': 'title',
+                        },
+                ))
+        news_text_nodes = tuple(html_parse.find_tags(
+                (news_item_node,),
+                'dd',
+                attrs={
+                        'class': 'text',
+                        },
+                ))
+        
+        if news_title_nodes and \
+                news_title_nodes[0].childs and \
+                isinstance(news_title_nodes[0].childs[0], html_parse.DataHtmlNode):
+            result_item['title'] = news_title_nodes[0].childs[0].data
+            result_item['raw_url'] = url_parse.urljoin(url, news_title_nodes[0].attrs.get('href', ''))
+            result_item['url'] = fix_yandex_news_url(result_item['raw_url'])
+        
+        if news_text_nodes and \
+                news_text_nodes[0].childs and \
+                isinstance(news_text_nodes[0].childs[0], html_parse.DataHtmlNode):
+            result_item['text'] = news_text_nodes[0].childs[0].data
+        
+        if result_item:
+            result_list.append(result_item)
+    
+    return tuple(result_list)
+
+def fetch_news_thread(fetch_lock, url_iter, on_begin=None, on_result=None):
     while True:
         data = Data()
         
@@ -153,68 +229,13 @@ def fetch_yandex_news_thread(fetch_lock, url_iter, on_begin=None, on_result=None
             on_begin(data)
         
         try:
-            cookies = cookiejar.CookieJar()
-            opener = request.build_opener(
-                    request.HTTPCookieProcessor(cookiejar=cookies),
-                    )
-            
-            resp = ext_open(
-                    opener,
-                    data.url,
-                    timeout=DEFAULT_TIMEOUT,
-                    )
-            if resp.getcode() != 200 or resp.geturl() != data.url:
-                raise GetYandexNewsError(
-                        'resp.getcode() != 200 or resp.geturl() != data.url')
-            
-            data.content = resp.read(DEFAULT_CONTENT_LENGTH).decode(
-                    'utf-8', 'replace')
-            
-            result_list = []
-            
-            news_item_nodes = tuple(html_parse.find_tags(
-                    (html_parse.html_parse(data.content),),
-                    'dl',
-                    attrs={
-                            'class': 'b-news-item',
-                            },
-                    ))
-            
-            for news_item_node in news_item_nodes:
-                result_item = {}
-                
-                news_title_nodes = tuple(html_parse.find_tags(
-                        (news_item_node,),
-                        'a',
-                        attrs={
-                                'class': 'title',
-                                },
-                        ))
-                news_text_nodes = tuple(html_parse.find_tags(
-                        (news_item_node,),
-                        'dd',
-                        attrs={
-                                'class': 'text',
-                                },
-                        ))
-                
-                if news_title_nodes and \
-                        news_title_nodes[0].childs and \
-                        isinstance(news_title_nodes[0].childs[0], html_parse.DataHtmlNode):
-                    result_item['title'] = news_title_nodes[0].childs[0].data
-                    result_item['raw_url'] = url_parse.urljoin(data.url, news_title_nodes[0].attrs.get('href', ''))
-                    result_item['url'] = fix_news_url(result_item['raw_url'])
-                
-                if news_text_nodes and \
-                        news_text_nodes[0].childs and \
-                        isinstance(news_text_nodes[0].childs[0], html_parse.DataHtmlNode):
-                    result_item['text'] = news_text_nodes[0].childs[0].data
-                
-                if result_item:
-                    result_list.append(result_item)
-            
-            data.result = tuple(result_list)
-            
+            if re.match(
+                    '^https?\:\/\/news\.yandex\.ru(\/|$)',
+                    data.url, flags=re.M|re.S):
+                data.result = parse_yandex_news(data.url)
+            else:
+                raise UnknownServiceFetchNewsError(
+                        'unknown service')
         except Exception:
             data.error = sys.exc_info()
         else:
@@ -223,7 +244,7 @@ def fetch_yandex_news_thread(fetch_lock, url_iter, on_begin=None, on_result=None
         if on_result is not None:
             on_result(data)
 
-def fetch_yandex_news(conc=None, url_list=None,
+def fetch_news(conc=None, url_list=None,
         on_begin=None, on_result=None, on_done=None):
     if conc is None:
         conc = DEFAULT_CONCURRENCY
@@ -236,7 +257,7 @@ def fetch_yandex_news(conc=None, url_list=None,
     
     thread_list = tuple(
             threading.Thread(
-                    target=lambda: fetch_yandex_news_thread(
+                    target=lambda: fetch_news_thread(
                             fetch_lock,
                             url_iter,
                             on_begin=on_begin,
