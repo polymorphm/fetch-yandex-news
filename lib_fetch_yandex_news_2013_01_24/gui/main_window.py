@@ -20,9 +20,9 @@ assert str is not bytes
 
 import threading
 import tkinter
-from tkinter import ttk, scrolledtext
-from . import tk_mt
-from .. import fetch_news
+from tkinter import ttk, scrolledtext, filedialog
+from . import tk_mt, tk_async
+from .. import read_list, fetch_news
 
 DEFAULT_MAIN_WINDOW_WIDTH = 700
 DEFAULT_MAIN_WINDOW_HEIGHT = 500
@@ -52,6 +52,10 @@ class MainWindow:
         self._center_frame = ttk.Frame(master=self._root)
         self._bottom_frame = ttk.Frame(master=self._root)
         
+        self._source_urls_file_label = ttk.Label(master=self._top_frame,
+                text='Source URLs File:')
+        self._source_urls_file_entry = ttk.Entry(master=self._top_frame)
+        
         self._show_url_var = tkinter.BooleanVar()
         self._show_url = ttk.Checkbutton(
                 master=self._top_frame, variable=self._show_url_var, text='Show URL')
@@ -77,6 +81,8 @@ class MainWindow:
         self._statusbar = ttk.Label(master=self._bottom_frame,
                 textvariable=self._status_var)
         
+        self._source_urls_file_label.pack(side=tkinter.TOP, fill=tkinter.X, padx=10, pady=10)
+        self._source_urls_file_entry.pack(side=tkinter.TOP, fill=tkinter.X, padx=10, pady=10)
         self._show_url.pack(side=tkinter.TOP, fill=tkinter.X, padx=10, pady=10)
         self._text.pack(fill=tkinter.BOTH, expand=True)
         self._select_source_urls_file_button.pack(side=tkinter.LEFT, padx=10, pady=10)
@@ -103,18 +109,28 @@ class MainWindow:
     def _set_status(self, text):
         self._status_var.set('Status: {}'.format(text))
     
-    def _select_source_urls_file_done(self, busy_state_id):
+    def _select_source_urls_file_result(self, busy_state_id, result):
         if self._busy_state or busy_state_id != self._busy_state_id:
             return
         
-        # TODO: ...
+        if not result:
+            return
+        
+        file_path = str(result)
+        self._source_urls_file_entry.delete(0, tkinter.END)
+        self._source_urls_file_entry.insert(0, file_path)
     
     def _select_source_urls_file_cmd(self):
         if self._busy_state:
             self._root.bell()
             return
         
-        # TODO: ...
+        tk_async.tk_async(
+                self._root,
+                lambda: filedialog.askopenfilename(parent=self._root),
+                self._busy_state_id,
+                callback=self._select_source_urls_file_result,
+                )
     
     def _reload_cmd(self):
         if self._busy_state:
@@ -125,6 +141,7 @@ class MainWindow:
         self._busy_state_id = object()
         self._set_status('Working')
         
+        self._source_urls_file_entry.config(state=tkinter.DISABLED)
         self._show_url.config(state=tkinter.DISABLED)
         self._select_source_urls_file_button.config(state=tkinter.DISABLED)
         self._reload_button.config(state=tkinter.DISABLED)
@@ -136,7 +153,13 @@ class MainWindow:
         self._text.config(state=tkinter.DISABLED)
         
         busy_state_id = self._busy_state_id
+        url_list_file_path = self._source_urls_file_entry.get().strip()
         show_url = self._show_url_var.get()
+        
+        if url_list_file_path:
+            url_list = read_list.read_list(url_list_file_path)
+        else:
+            url_list = None
         
         def on_result(data):
             self._tk_mt.push(lambda: self._on_reload_result(busy_state_id, show_url, data))
@@ -145,6 +168,7 @@ class MainWindow:
             self._tk_mt.push(lambda: self._on_reload_done(busy_state_id))
         
         fetch_news.fetch_news(
+                url_list=url_list,
                 on_result=on_result,
                 on_done=on_done,
                 )
@@ -169,6 +193,7 @@ class MainWindow:
         self._busy_state_id = object()
         self._set_status('Done')
         
+        self._source_urls_file_entry.config(state=tkinter.NORMAL)
         self._show_url.config(state=tkinter.NORMAL)
         self._select_source_urls_file_button.config(state=tkinter.NORMAL)
         self._reload_button.config(state=tkinter.NORMAL)
