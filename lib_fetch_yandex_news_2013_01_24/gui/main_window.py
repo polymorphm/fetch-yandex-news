@@ -77,7 +77,7 @@ class MainWindow:
         self._statusbar = ttk.Label(master=self._bottom_frame,
                 textvariable=self._status_var)
         
-        self._show_url.pack(side=tkinter.LEFT, padx=10, pady=10)
+        self._show_url.pack(side=tkinter.TOP, fill=tkinter.X, padx=10, pady=10)
         self._text.pack(fill=tkinter.BOTH, expand=True)
         self._select_source_urls_file_button.pack(side=tkinter.LEFT, padx=10, pady=10)
         self._reload_button.pack(side=tkinter.LEFT, padx=10, pady=10)
