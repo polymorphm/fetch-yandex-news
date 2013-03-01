@@ -112,7 +112,7 @@ class MainWindow:
         self._close_button.config(state=tkinter.DISABLED)
         
         self._text.config(state=tkinter.NORMAL)
-        self._text.delete(1.0, tkinter.END)
+        self._text.delete('1.0', tkinter.END)
         self._text.config(state=tkinter.DISABLED)
         
         busy_state_id = self._busy_state_id
@@ -159,6 +159,6 @@ class MainWindow:
             self._root.bell()
             return
         
-        content = self._text.get(1.0, tkinter.END).rstrip()
+        content = self._text.get('1.0', tkinter.END).rstrip()
         self._root.clipboard_clear()
         self._root.clipboard_append(content)
