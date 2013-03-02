@@ -144,6 +144,22 @@ class MainWindow:
             self._root.bell()
             return
         
+        url_list_file_path = self._source_urls_file_entry.get().strip()
+        show_url = self._show_url_var.get()
+        spec_url_sep = self._spec_url_sep_var.get()
+        
+        if url_list_file_path:
+            try:
+                url_list = read_list.read_list(url_list_file_path)
+            except EnvironmentError:
+                # ``EnvironmentError`` will never excepted HERE,
+                #   because ``read_list.read_list()`` -- is lazy generator
+                
+                self._root.bell()
+                return
+        else:
+            url_list = None
+        
         self._busy_state = True
         self._busy_state_id = object()
         self._set_status('Working')
@@ -161,14 +177,6 @@ class MainWindow:
         self._text.config(state=tkinter.DISABLED)
         
         busy_state_id = self._busy_state_id
-        url_list_file_path = self._source_urls_file_entry.get().strip()
-        show_url = self._show_url_var.get()
-        spec_url_sep = self._spec_url_sep_var.get()
-        
-        if url_list_file_path:
-            url_list = read_list.read_list(url_list_file_path)
-        else:
-            url_list = None
         
         def on_result(data):
             self._tk_mt.push(lambda: self._on_reload_result(

@@ -285,7 +285,7 @@ def fetch_news_thread(fetch_lock, url_iter, on_begin=None, on_result=None):
         with fetch_lock:
             try:
                 data.url_id, data.url = next(url_iter)
-            except StopIteration:
+            except (StopIteration, EnvironmentError):
                 return
         
         if on_begin is not None:
